@@ -155,7 +155,7 @@ public class WorkflowRevisionService {
                 .map(entry -> new GenericInformation(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
 
-        return genericInformationRepository.save(genericInformationEntities);
+        return genericInformationEntities;
     }
 
     private Iterable<Variable> persistVariable(WorkflowParser parser) {
@@ -163,7 +163,7 @@ public class WorkflowRevisionService {
                 .map(entry -> new Variable(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
 
-        return variableRepository.save(variablesEntities);
+        return variablesEntities;
     }
 
     private Supplier<UnprocessableEntityException> getMissingElementException(String message) {
