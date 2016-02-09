@@ -83,8 +83,7 @@ public class QueryDslWorkflowRevisionRepository extends QueryDslRepositorySuppor
                 .join(qWorkflowRevision.workflow)
                 .leftJoin(qWorkflowRevision.variables, qVariable)
                 .leftJoin(qWorkflowRevision.genericInformation, qGenericInformation)
-                .where(qWorkflowRevision.workflow.lastRevisionId.eq(qWorkflowRevision.revisionId))
-                .where(predicate)
+                .where(qWorkflowRevision.workflow.lastRevisionId.eq(qWorkflowRevision.revisionId).and(predicate))
                 .distinct(), pageable);
     }
 

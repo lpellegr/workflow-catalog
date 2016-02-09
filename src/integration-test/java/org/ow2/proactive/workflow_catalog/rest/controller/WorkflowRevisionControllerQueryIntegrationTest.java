@@ -33,6 +33,7 @@ package org.ow2.proactive.workflow_catalog.rest.controller;
 import com.google.common.collect.ImmutableMap;
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.response.ValidatableResponse;
+import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +51,8 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static com.jayway.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.Is.is;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 
 /**
@@ -82,7 +85,7 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
         bucket = bucketService.createBucket("bucket");
 
         // create workflows
-        for (int workflowIndex = 0; workflowIndex < NUMBER_OF_WORKFLOWS; workflowIndex++) {
+        for (int workflowIndex = 1; workflowIndex <= NUMBER_OF_WORKFLOWS; workflowIndex++) {
             ProActiveWorkflowParserResult proActiveWorkflowParserResult =
                     new ProActiveWorkflowParserResult("projectName",
                             "name" + workflowIndex, createKeyValues(workflowIndex), createKeyValues(workflowIndex));
@@ -91,7 +94,7 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
                     workflowService.createWorkflow(bucket.id, proActiveWorkflowParserResult, new byte[0]);
 
             // insert new revisions
-            for (int revisionIndex = 0; revisionIndex < NUMBER_OF_WORKFLOW_REVISIONS_TO_ADD; revisionIndex++) {
+            for (int revisionIndex = 1; revisionIndex <= NUMBER_OF_WORKFLOW_REVISIONS_TO_ADD; revisionIndex++) {
                 proActiveWorkflowParserResult =
                         new ProActiveWorkflowParserResult("projectName",
                                 "name" + workflowIndex, createKeyValues(workflowIndex), createKeyValues(workflowIndex));
@@ -105,20 +108,102 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
     @Test
     public void testFindMostRecentWorkflows() {
         // all tests are part of the same Junit test method to prevent multiple context reloading
-        // and thus improving execution time in that case where no state change
+        // and thus improving execution time since there is no state change
 
         testFindMostRecentWorkflowsNoPredicate();
+        testFindMostRecentWorkflowsSingleVariableNameClause();
+        testFindMostRecentWorkflowsSingleVariableValueClause();
+        testFindMostRecentWorkflowsSingleGenericInformationNameClause();
+        testFindMostRecentWorkflowsSingleGenericInformationValueClause();
+        testFindMostRecentWorkflowsSingleProjectNameClause();
+        testFindMostRecentWorkflowsSingleNameClause();
+        testFindMostRecentWorkflowsSingleNameClauseNotEqualOperator();
+        testFindMostRecentWorkflowsInvalidPredicateLexicalError();
+        testFindMostRecentWorkflowsInvalidPredicateVisitorError();
+        testFindMostRecentWorkflowsMultipleAnd();
+        testFindMostRecentWorkflowsMultipleOr();
     }
 
     public void testFindMostRecentWorkflowsNoPredicate() {
-        ValidatableResponse response = findMostRecentWorkflows("");
+        findMostRecentWorkflows("")
+                .body("_embedded.workflowMetadataList", hasSize(NUMBER_OF_WORKFLOWS));
+    }
+
+    public void testFindMostRecentWorkflowsSingleVariableNameClause() {
+        findMostRecentWorkflows("variable.name=\"key" + NUMBER_OF_WORKFLOWS + "\"")
+                .statusCode(HttpStatus.SC_OK)
+                .body("_embedded.workflowMetadataList", hasSize(1))
+                .body("_embedded.workflowMetadataList[0].name", is("name" + NUMBER_OF_WORKFLOWS));
+    }
+
+    public void testFindMostRecentWorkflowsSingleVariableValueClause() {
+        findMostRecentWorkflows("variable.value=\"value" + NUMBER_OF_WORKFLOWS + "\"")
+                .statusCode(HttpStatus.SC_OK)
+                .body("_embedded.workflowMetadataList", hasSize(1))
+                .body("_embedded.workflowMetadataList[0].name", is("name" + NUMBER_OF_WORKFLOWS));
+    }
+
+    public void testFindMostRecentWorkflowsSingleGenericInformationNameClause() {
+        findMostRecentWorkflows("generic_information.name=\"key" + NUMBER_OF_WORKFLOWS + "\"")
+                .statusCode(HttpStatus.SC_OK)
+                .body("_embedded.workflowMetadataList", hasSize(1))
+                .body("_embedded.workflowMetadataList[0].name", is("name" + NUMBER_OF_WORKFLOWS));
+    }
+
+    public void testFindMostRecentWorkflowsSingleGenericInformationValueClause() {
+        findMostRecentWorkflows("generic_information.value=\"value" + NUMBER_OF_WORKFLOWS + "\"")
+                .statusCode(HttpStatus.SC_OK)
+                .body("_embedded.workflowMetadataList", hasSize(1))
+                .body("_embedded.workflowMetadataList[0].name", is("name" + NUMBER_OF_WORKFLOWS));
+    }
+
+    public void testFindMostRecentWorkflowsSingleProjectNameClause() {
+        findMostRecentWorkflows("project_name=\"projectName\"")
+                .statusCode(HttpStatus.SC_OK)
+                .body("_embedded.workflowMetadataList", hasSize(NUMBER_OF_WORKFLOWS));
+    }
+
+    public void testFindMostRecentWorkflowsSingleNameClause() {
+        findMostRecentWorkflows("name=\"name" + (NUMBER_OF_WORKFLOWS / 2) + "\"")
+                .statusCode(HttpStatus.SC_OK)
+                .body("_embedded.workflowMetadataList", hasSize(1));
+    }
+
+    public void testFindMostRecentWorkflowsSingleNameClauseNotEqualOperator() {
+        findMostRecentWorkflows("name!=\"name" + (NUMBER_OF_WORKFLOWS / 2) + "\"")
+                .statusCode(HttpStatus.SC_OK)
+                .body("_embedded.workflowMetadataList", hasSize(NUMBER_OF_WORKFLOWS - 1));
+    }
+
+    public void testFindMostRecentWorkflowsInvalidPredicateLexicalError() {
+        findMostRecentWorkflows("nonExistingAttribute <> \"Bye bye\"")
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    public void testFindMostRecentWorkflowsInvalidPredicateVisitorError() {
+        findMostRecentWorkflows("projectName=\"projectName\"")
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    public void testFindMostRecentWorkflowsMultipleAnd() {
+        findMostRecentWorkflows(
+                "name=\"name1\" OR name=\"name" + (NUMBER_OF_WORKFLOWS / 2)
+                        + "\" OR name=\"name" + NUMBER_OF_WORKFLOWS + "\"")
+                .body("_embedded.workflowMetadataList", hasSize(3));
+    }
+
+    public void testFindMostRecentWorkflowsMultipleOr() {
+        findMostRecentWorkflows(
+                "name=\"name1\" OR name=\"name" + (NUMBER_OF_WORKFLOWS / 2)
+                        + "\" OR name=\"name" + NUMBER_OF_WORKFLOWS + "\"")
+                .body("_embedded.workflowMetadataList", hasSize(3));
     }
 
     public ValidatableResponse findMostRecentWorkflows(String wcqlQuery) {
         Response response = given().pathParam("bucketId", bucket.id)
+                .queryParam("size", TOTAL_NUMBER_OF_WORKFLOW_REVISIONS)
                 .queryParam("query", wcqlQuery)
                 .when().get(WORKFLOWS_RESOURCE);
-
         return response.then().assertThat();
     }
 

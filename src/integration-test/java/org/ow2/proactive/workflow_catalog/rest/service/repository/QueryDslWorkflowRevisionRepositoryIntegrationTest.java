@@ -160,6 +160,17 @@ public class QueryDslWorkflowRevisionRepositoryIntegrationTest extends AbstractW
                         }
                 ),
 
+                // search workflow revision based on multiple OR conditions
+                new TestInput(
+                        builder -> {
+                            builder.or(QWorkflowRevision.workflowRevision.name.eq("name1"));
+                            builder.or(QWorkflowRevision.workflowRevision.name.eq("name" + (NUMBER_OF_WORKFLOWS / 2)));
+                            builder.or(QWorkflowRevision.workflowRevision.name.eq("name" + (NUMBER_OF_WORKFLOWS - 1)));
+                            return builder;
+                        },
+                        3 * expectedNbResultsMultiple
+                ),
+
                 // search workflow revisions based on mixed and nested AND and OR conditions
 
                 new TestInput(
