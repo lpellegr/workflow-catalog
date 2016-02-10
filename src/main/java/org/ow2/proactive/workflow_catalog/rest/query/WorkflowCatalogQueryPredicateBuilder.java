@@ -30,9 +30,14 @@
  */
 package org.ow2.proactive.workflow_catalog.rest.query;
 
+import com.google.common.collect.ImmutableSet;
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.types.Predicate;
+import org.ow2.proactive.workflow_catalog.rest.entity.QGenericInformation;
+import org.ow2.proactive.workflow_catalog.rest.entity.QVariable;
 import org.ow2.proactive.workflow_catalog.rest.query.parser.WorkflowCatalogQueryLanguageParser;
+
+import java.util.Set;
 
 
 /**
@@ -52,17 +57,20 @@ public class WorkflowCatalogQueryPredicateBuilder {
         this.wcqlVisitor = new WorkflowCatalogQueryLanguageVisitor();
     }
 
-    public Predicate build() throws QueryPredicateBuilderException {
+    public PredicateContext build() throws QueryPredicateBuilderException {
         // empty query must throw no exception and be valid
         if (workflowCatalogQuery.trim().isEmpty()) {
-            return new BooleanBuilder();
+            return new PredicateContext(new BooleanBuilder(), ImmutableSet.of(), ImmutableSet.of());
         }
 
         try {
             WorkflowCatalogQueryLanguageParser.ExpressionContext context =
                     queryCompiler.compile(workflowCatalogQuery);
 
-            return wcqlVisitor.visitExpression(context);
+            BooleanBuilder booleanBuilder = wcqlVisitor.visitExpression(context);
+
+            WorkflowCatalogQueryLanguageVisitor.QGenerator generator = wcqlVisitor.getGenerator();
+            return new PredicateContext(booleanBuilder, generator.getqGenericInformation(), generator.getqVariables());
         } catch (QueryPredicateBuilderRuntimeException | SyntaxException e) {
             throw new QueryPredicateBuilderException(e.getMessage());
         }
@@ -74,6 +82,33 @@ public class WorkflowCatalogQueryPredicateBuilder {
 
     protected void setWcqlVisitor(WorkflowCatalogQueryLanguageVisitor wcqlVisitor) {
         this.wcqlVisitor = wcqlVisitor;
+    }
+
+    public static final class PredicateContext {
+
+        private final Predicate predicate;
+
+        private final Set<QGenericInformation> qGenericInformation;
+
+        private final Set<QVariable> qVariables;
+
+        public PredicateContext(Predicate predicate, Set<QGenericInformation> qGenericInformation, Set<QVariable> qVariables) {
+            this.predicate = predicate;
+            this.qGenericInformation = qGenericInformation;
+            this.qVariables = qVariables;
+        }
+
+        public Predicate getPredicate() {
+            return predicate;
+        }
+
+        public Set<QGenericInformation> getqGenericInformation() {
+            return qGenericInformation;
+        }
+
+        public Set<QVariable> getqVariables() {
+            return qVariables;
+        }
     }
 
 }

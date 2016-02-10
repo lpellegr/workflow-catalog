@@ -38,6 +38,7 @@ import org.ow2.proactive.workflow_catalog.rest.entity.QGenericInformation;
 import org.ow2.proactive.workflow_catalog.rest.entity.QVariable;
 import org.ow2.proactive.workflow_catalog.rest.entity.QWorkflowRevision;
 import org.ow2.proactive.workflow_catalog.rest.entity.WorkflowRevision;
+import org.ow2.proactive.workflow_catalog.rest.query.WorkflowCatalogQueryPredicateBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -77,13 +78,23 @@ public class QueryDslWorkflowRevisionRepository extends QueryDslRepositorySuppor
                         .distinct(), pageable);
     }
 
-    public Page<WorkflowRevision> findMostRecentWorkflowRevisions(Predicate predicate, Pageable pageable) {
-        return findWorkflowRevisions(new JPAQuery(entityManager)
+    public Page<WorkflowRevision> findMostRecentWorkflowRevisions(WorkflowCatalogQueryPredicateBuilder.PredicateContext context, Pageable pageable) {
+
+        final JPAQuery join = new JPAQuery(entityManager)
                 .from(qWorkflowRevision)
-                .join(qWorkflowRevision.workflow)
-                .leftJoin(qWorkflowRevision.variables, qVariable)
-                .leftJoin(qWorkflowRevision.genericInformation, qGenericInformation)
-                .where(qWorkflowRevision.workflow.lastRevisionId.eq(qWorkflowRevision.revisionId).and(predicate))
+                .join(qWorkflowRevision.workflow);
+
+        for (QGenericInformation gi : context.getqGenericInformation()) {
+            join.leftJoin(qWorkflowRevision.genericInformation, gi);
+        }
+
+        for (QVariable var : context.getqVariables()) {
+            join.leftJoin(qWorkflowRevision.variables, var);
+        }
+
+        join.where(qWorkflowRevision.workflow.lastRevisionId.eq(qWorkflowRevision.revisionId).and(context.getPredicate()));
+        System.out.println("QueryDslWorkflowRevisionRepository.findMostRecentWorkflowRevisions QUERYQUERY=" + join);
+        return findWorkflowRevisions(join
                 .distinct(), pageable);
     }
 

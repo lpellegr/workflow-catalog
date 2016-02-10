@@ -171,6 +171,17 @@ public class QueryDslWorkflowRevisionRepositoryIntegrationTest extends AbstractW
                         3 * expectedNbResultsMultiple
                 ),
 
+                // search workflow revision based on multiple AND conditions on same attribute
+                new TestInput(
+                        builder -> {
+                            builder.and(QGenericInformation.genericInformation.key.eq("key1"));
+                            builder.and(QGenericInformation.genericInformation.key.eq("key2"));
+                            builder.and(QGenericInformation.genericInformation.key.eq("key3"));
+                            return builder;
+                        },
+                        NUMBER_OF_WORKFLOWS * expectedNbResultsMultiple
+                ),
+
                 // search workflow revisions based on mixed and nested AND and OR conditions
 
                 new TestInput(
@@ -245,9 +256,14 @@ public class QueryDslWorkflowRevisionRepositoryIntegrationTest extends AbstractW
 
         // key, values common to all workflow revisions that belong to a same workflow
         result.put("key1" + workflowIndex, "value1" + workflowIndex);
+
         result.put("key2" + workflowIndex, "value2" + workflowIndex);
         result.put("key3" + workflowIndex, "value3" + workflowIndex);
         result.put("key4" + workflowIndex, "value4" + workflowIndex);
+
+        result.put("key1", "value1");
+        result.put("key2", "value2" );
+        result.put("key3", "value3");
 
         result.put("revision", revisionIndex == -1 ? "1" : "" + revisionIndex);
         result.put("workflowIndexIsMultipleOf2", workflowIndex % 2 == 0 ? "true" : "false");

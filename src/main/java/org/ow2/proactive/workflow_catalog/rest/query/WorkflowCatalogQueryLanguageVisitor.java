@@ -41,6 +41,7 @@ import org.ow2.proactive.workflow_catalog.rest.query.parser.WorkflowCatalogQuery
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,13 +63,12 @@ public class WorkflowCatalogQueryLanguageVisitor extends WorkflowCatalogQueryLan
     private final static String NAME_KEYWORD = "name";
     private final static String VALUE_KEYWORD = "value";
 
-    private static final Map<ClauseKey, Function<String, Predicate>> CLAUSES_TO_FUNC_MAP;
+    private final Map<ClauseKey, Function<String, Predicate>> CLAUSES_TO_FUNC_MAP;
 
-    static {
-        CLAUSES_TO_FUNC_MAP = initClausesToFuncMap();
-    }
+    private QGenerator generator = new QGenerator();
 
     public WorkflowCatalogQueryLanguageVisitor() {
+        CLAUSES_TO_FUNC_MAP = initClausesToFuncMap();
     }
 
     @Override
@@ -177,26 +177,30 @@ public class WorkflowCatalogQueryLanguageVisitor extends WorkflowCatalogQueryLan
         }
     }
 
-    private static Map<ClauseKey, Function<String, Predicate>> initClausesToFuncMap() {
+    public QGenerator getGenerator() {
+        return generator;
+    }
+
+    private Map<ClauseKey, Function<String, Predicate>> initClausesToFuncMap() {
         Map<ClauseKey, Function<String, Predicate>> map = new HashMap<>(32);
 
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.KEY, false),
-                literalString -> QVariable.variable.key.eq(literalString));
+                literalString -> generator.createVariableAlias().key.eq(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.KEY, false),
-                literalString -> QVariable.variable.key.ne(literalString));
+                literalString -> generator.createVariableAlias().key.ne(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, false),
-                literalString -> QVariable.variable.value.eq(literalString));
+                literalString -> generator.createVariableAlias().value.eq(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, false),
-                literalString -> QVariable.variable.value.ne(literalString));
+                literalString -> generator.createVariableAlias().value.ne(literalString));
 
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.KEY, false),
-                literalString -> QGenericInformation.genericInformation.key.eq(literalString));
+                literalString -> generator.createGenericInformationAlias().key.eq(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.KEY, false),
-                literalString -> QGenericInformation.genericInformation.key.ne(literalString));
+                literalString -> generator.createGenericInformationAlias().key.ne(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, false),
-                literalString -> QGenericInformation.genericInformation.value.eq(literalString));
+                literalString -> generator.createGenericInformationAlias().value.eq(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, false),
-                literalString -> QGenericInformation.genericInformation.value.ne(literalString));
+                literalString -> generator.createGenericInformationAlias().value.ne(literalString));
 
         map.put(new ClauseKey(ClauseKey.TABLE.NAME, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.NOT_APPLICABLE, false),
                 literalString -> QWorkflowRevision.workflowRevision.name.eq(literalString));
@@ -217,22 +221,22 @@ public class WorkflowCatalogQueryLanguageVisitor extends WorkflowCatalogQueryLan
                 literalString -> QWorkflowRevision.workflowRevision.projectName.ne(literalString));
 
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.KEY, true),
-                literalString -> QVariable.variable.key.like(literalString));
+                literalString -> generator.createVariableAlias().key.like(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.KEY, true),
-                literalString -> QVariable.variable.key.notLike(literalString));
+                literalString -> generator.createVariableAlias().key.notLike(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, true),
-                literalString -> QVariable.variable.value.like(literalString));
+                literalString -> generator.createVariableAlias().value.like(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.VARIABLE, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, true),
-                literalString -> QVariable.variable.value.notLike(literalString));
+                literalString -> generator.createVariableAlias().value.notLike(literalString));
 
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.KEY, true),
-                literalString -> QGenericInformation.genericInformation.key.like(literalString));
+                literalString -> generator.createGenericInformationAlias().key.like(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.KEY, true),
-                literalString -> QGenericInformation.genericInformation.key.notLike(literalString));
+                literalString -> generator.createGenericInformationAlias().key.notLike(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, true),
-                literalString -> QGenericInformation.genericInformation.value.like(literalString));
+                literalString -> generator.createGenericInformationAlias().value.like(literalString));
         map.put(new ClauseKey(ClauseKey.TABLE.GENERIC_INFORMATION, ClauseKey.OPERATION.NOT_EQUAL, ClauseKey.CLAUSE_TYPE.VALUE, true),
-                literalString -> QGenericInformation.genericInformation.value.notLike(literalString));
+                literalString -> generator.createGenericInformationAlias().value.notLike(literalString));
 
         map.put(new ClauseKey(ClauseKey.TABLE.NAME, ClauseKey.OPERATION.EQUAL, ClauseKey.CLAUSE_TYPE.NOT_APPLICABLE, true),
                 literalString -> QWorkflowRevision.workflowRevision.name.like(literalString));
@@ -253,6 +257,53 @@ public class WorkflowCatalogQueryLanguageVisitor extends WorkflowCatalogQueryLan
                 literalString -> QWorkflowRevision.workflowRevision.projectName.notLike(literalString));
 
         return ImmutableMap.copyOf(map);
+    }
+
+    public static class QGenerator {
+
+        private int index = 0;
+
+        private Set<QGenericInformation> qGenericInformation;
+
+        private Set<QVariable> qVariables;
+
+        public QGenericInformation createGenericInformationAlias() {
+            QGenericInformation qGenericInformation = new QGenericInformation("genericInformation" + index);
+            this.qGenericInformation.add(qGenericInformation);
+            index++;
+            return qGenericInformation;
+        }
+
+        public QVariable createVariableAlias() {
+            QVariable qVariable = new QVariable("variable" + index);
+            this.qVariables.add(qVariable);
+            index++;
+            return qVariable;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public void setIndex(int index) {
+            this.index = index;
+        }
+
+        public Set<QGenericInformation> getqGenericInformation() {
+            return qGenericInformation;
+        }
+
+        public void setqGenericInformation(Set<QGenericInformation> qGenericInformation) {
+            this.qGenericInformation = qGenericInformation;
+        }
+
+        public Set<QVariable> getqVariables() {
+            return qVariables;
+        }
+
+        public void setqVariables(Set<QVariable> qVariables) {
+            this.qVariables = qVariables;
+        }
     }
 
 }

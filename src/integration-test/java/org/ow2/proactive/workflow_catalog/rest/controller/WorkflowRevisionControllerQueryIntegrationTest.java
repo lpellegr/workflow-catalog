@@ -31,6 +31,10 @@
 package org.ow2.proactive.workflow_catalog.rest.controller;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.response.ValidatableResponse;
 import org.apache.http.HttpStatus;
@@ -48,7 +52,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.hasSize;
@@ -78,6 +83,14 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
     private static final int TOTAL_NUMBER_OF_WORKFLOW_REVISIONS =
             (NUMBER_OF_WORKFLOW_REVISIONS_TO_ADD + 1) * NUMBER_OF_WORKFLOWS;
 
+    private static final int MULTIPLE_OF_TWO = numberOfMultiple(1, NUMBER_OF_WORKFLOWS, 2);
+
+    private static final int MULTIPLE_OF_THREE = numberOfMultiple(1, NUMBER_OF_WORKFLOWS, 3);
+
+    private static final int MULTIPLE_OF_FOUR = numberOfMultiple(1, NUMBER_OF_WORKFLOWS, 4);
+
+    private static final int MULTIPLE_OF_FIVE = numberOfMultiple(1, NUMBER_OF_WORKFLOWS, 5);
+
     private BucketMetadata bucket;
 
     @Before
@@ -94,14 +107,14 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
                     workflowService.createWorkflow(bucket.id, proActiveWorkflowParserResult, new byte[0]);
 
             // insert new revisions
-            for (int revisionIndex = 1; revisionIndex <= NUMBER_OF_WORKFLOW_REVISIONS_TO_ADD; revisionIndex++) {
-                proActiveWorkflowParserResult =
-                        new ProActiveWorkflowParserResult("projectName",
-                                "name" + workflowIndex, createKeyValues(workflowIndex), createKeyValues(workflowIndex));
-
-                workflowRevisionService.createWorkflowRevision(
-                        bucket.id, Optional.of(workflow.id), proActiveWorkflowParserResult, new byte[0]);
-            }
+//            for (int revisionIndex = 1; revisionIndex <= NUMBER_OF_WORKFLOW_REVISIONS_TO_ADD; revisionIndex++) {
+//                proActiveWorkflowParserResult =
+//                        new ProActiveWorkflowParserResult("projectName",
+//                                "name" + workflowIndex, createKeyValues(workflowIndex), createKeyValues(workflowIndex));
+//
+//                workflowRevisionService.createWorkflowRevision(
+//                        bucket.id, Optional.of(workflow.id), proActiveWorkflowParserResult, new byte[0]);
+//            }
         }
     }
 
@@ -186,9 +199,13 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
     }
 
     public void testFindMostRecentWorkflowsMultipleAnd() {
-        findMostRecentWorkflows(
-                "name=\"name1\" OR name=\"name" + (NUMBER_OF_WORKFLOWS / 2)
-                        + "\" OR name=\"name" + NUMBER_OF_WORKFLOWS + "\"")
+
+        System.out.println("WorkflowRevisionControllerQueryIntegrationTest.testFindMostRecentWorkflowsMultipleAnd ALL");
+
+        findMostRecentWorkflows("");
+
+        System.out.println("WorkflowRevisionControllerQueryIntegrationTest.testFindMostRecentWorkflowsMultipleAnd MULTIPLE AND");
+        findMostRecentWorkflows("variable.name=\"multipleOf2\" AND variable.name=\"multipleOf4\"")
                 .body("_embedded.workflowMetadataList", hasSize(3));
     }
 
@@ -204,6 +221,13 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
                 .queryParam("size", TOTAL_NUMBER_OF_WORKFLOW_REVISIONS)
                 .queryParam("query", wcqlQuery)
                 .when().get(WORKFLOWS_RESOURCE);
+
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonParser jp = new JsonParser();
+        JsonElement je = jp.parse(response.asString());
+        String prettyJsonString = gson.toJson(je);
+        System.out.println("PAYLOAD=" + prettyJsonString);
         return response.then().assertThat();
     }
 
@@ -212,7 +236,14 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
     }
 
     private ImmutableMap<String, String> createKeyValues(int workflowIndex, int revisionIndex) {
-        ImmutableMap.Builder<String, String> result = ImmutableMap.builder();
+        Map<String, String> result = new HashMap<>();
+
+        for (int multiple = 2; multiple <= 5; multiple++) {
+            if (workflowIndex % multiple == 0) {
+                String key = "multipleOf" + multiple;
+                result.put(key, "true");
+            }
+        }
 
         for (int i = 1; i <= workflowIndex; i++) {
             result.put("key" + i, "value" + i);
@@ -221,7 +252,19 @@ public class WorkflowRevisionControllerQueryIntegrationTest extends AbstractWork
         result.put("revision", revisionIndex == -1 ? "1" : "" + revisionIndex);
         result.put("workflow", "" + workflowIndex);
 
-        return result.build();
+        return ImmutableMap.copyOf(result);
+    }
+
+    private static int numberOfMultiple(int from, int to, int multiple) {
+        int result = 0;
+
+        for (int i = from; i <= to; i++) {
+            if (i % multiple == 0) {
+                result++;
+            }
+        }
+
+        return result;
     }
 
 }

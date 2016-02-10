@@ -185,17 +185,20 @@ public class WorkflowRevisionService {
             findWorkflow(workflowId.get());
 
             if (query.isPresent()) {
-                Predicate jpaQueryPredicate = createJpaQueryPredicate(query.get());
-                BooleanBuilder booleanBuilder = new BooleanBuilder(jpaQueryPredicate);
-                booleanBuilder.and(QWorkflowRevision.workflowRevision.workflow.id.eq(workflowId.get()));
+                WorkflowCatalogQueryPredicateBuilder.PredicateContext jpaQueryPredicate = createJpaQueryPredicate(query.get());
+                // TODO
+//                BooleanBuilder booleanBuilder = new BooleanBuilder(jpaQueryPredicate);
+//                booleanBuilder.and(QWorkflowRevision.workflowRevision.workflow.id.eq(workflowId.get()));
 
-                page = queryDslWorkflowRevisionRepository.findAllWorkflowRevisions(booleanBuilder, pageable);
+//                page = queryDslWorkflowRevisionRepository.findAllWorkflowRevisions(jpaQueryPredicate, pageable);
+                page = null;
             } else {
                 page = workflowRevisionRepository.getRevisions(workflowId.get(), pageable);
             }
         } else {
             if (query.isPresent()) {
-                Predicate jpaQueryPredicate = createJpaQueryPredicate(query.get());
+                WorkflowCatalogQueryPredicateBuilder.PredicateContext jpaQueryPredicate = createJpaQueryPredicate(query.get());
+                System.out.println("WorkflowRevisionService.listWorkflows PREDICATE" + jpaQueryPredicate);
                 page = queryDslWorkflowRevisionRepository.findMostRecentWorkflowRevisions(jpaQueryPredicate, pageable);
             } else {
                 page = workflowRepository.getMostRecentRevisions(bucketId, pageable);
@@ -205,7 +208,7 @@ public class WorkflowRevisionService {
         return assembler.toResource(page, workflowRevisionResourceAssembler);
     }
 
-    private Predicate createJpaQueryPredicate(String workflowCatalogQuery) throws QueryPredicateBuilderException {
+    private WorkflowCatalogQueryPredicateBuilder.PredicateContext createJpaQueryPredicate(String workflowCatalogQuery) throws QueryPredicateBuilderException {
         WorkflowCatalogQueryPredicateBuilder builder =
                 new WorkflowCatalogQueryPredicateBuilder(workflowCatalogQuery);
 
@@ -257,11 +260,10 @@ public class WorkflowRevisionService {
                 linkTo(methodOn(WorkflowRevisionController.class)
                         .get(bucketId, workflowId, workflowRevision.getRevisionId(), null));
 
-        // alt request parameter name and valud is added manually
+        // alt request parameter name and value is added manually
         // otherwise a converter needs to be configured
         // for Optional class
         return new Link(controllerLinkBuilder.toString() + "?alt=" + SUPPORTED_ALT_VALUE).withRel("content");
     }
-
 
 }
