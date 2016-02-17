@@ -31,13 +31,27 @@
 
 package org.ow2.proactive.workflow_catalog.rest.entity;
 
-import org.ow2.proactive.workflow_catalog.rest.util.LocalDateTimeAttributeConverter;
-import org.springframework.data.annotation.CreatedDate;
-
-import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Index;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
+import org.ow2.proactive.workflow_catalog.rest.util.LocalDateTimeAttributeConverter;
+import org.springframework.data.annotation.CreatedDate;
 
 /**
  * @author ActiveEon Team
@@ -75,10 +89,10 @@ public class WorkflowRevision {
     @Column(name = "PROJECT_NAME", nullable = false)
     private String projectName;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<GenericInformation> genericInformation;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Variable> variables;
 
     @Lob

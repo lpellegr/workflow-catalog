@@ -39,8 +39,10 @@ import org.ow2.proactive.workflow_catalog.rest.entity.QVariable;
 import org.ow2.proactive.workflow_catalog.rest.entity.QWorkflowRevision;
 import org.ow2.proactive.workflow_catalog.rest.entity.WorkflowRevision;
 import org.ow2.proactive.workflow_catalog.rest.query.PredicateContext;
+import com.mysema.query.jpa.JPASubQuery;
 import com.mysema.query.jpa.JPQLQuery;
 import com.mysema.query.jpa.impl.JPAQuery;
+import com.mysema.query.types.query.ListSubQuery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +65,32 @@ public class QueryDslWorkflowRevisionRepository extends QueryDslRepositorySuppor
         super(WorkflowRevision.class);
     }
 
+    public Page<WorkflowRevision> findCustom(long bucketId,
+            Pageable pageable) {
+        JPAQuery query = createQuery();
+
+        query.from(QWorkflowRevision.workflowRevision).where(QWorkflowRevision.workflowRevision.genericInformation.contains())
+        final ListSubQuery<WorkflowRevision> sub1 = new JPASubQuery()
+                .from(QGenericInformation.genericInformation)
+                .where(QGenericInformation.genericInformation.key.eq("I")).list(
+                        QWorkflowRevision.workflowRevision);
+        final JPASubQuery sub2 = new JPASubQuery()
+                .from(QGenericInformation.genericInformation)
+                .where(QGenericInformation.genericInformation.value.eq("E"));
+
+
+
+//        query.from(QWorkflowRevision.workflowRevision).where(QWorkflowRevision.workflowRevision.genericInformation.)
+
+        query.where(
+                QWorkflowRevision.workflowRevision.in(sub1));
+
+
+        System.out.println("QueryDslWorkflowRevisionRepository.findCustom QUERY=" + query );
+
+        return findWorkflowRevisions(query, pageable);
+    }
+
     public Page<WorkflowRevision> findAllWorkflowRevisions(long bucketId, PredicateContext predicateContext,
             Pageable pageable) {
         JPAQuery query = createQuery();
@@ -75,7 +103,6 @@ public class QueryDslWorkflowRevisionRepository extends QueryDslRepositorySuppor
     public Page<WorkflowRevision> findMostRecentWorkflowRevisions(long bucketId, PredicateContext context,
             Pageable pageable) {
         JPAQuery query = createQuery().join(qWorkflowRevision.workflow);
-
         context =
                 new PredicateContext(
                         qWorkflowRevision.workflow.lastRevisionId

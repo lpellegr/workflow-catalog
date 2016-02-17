@@ -30,8 +30,15 @@
  */
 package org.ow2.proactive.workflow_catalog.rest.entity;
 
-import javax.persistence.*;
-import java.util.Objects;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Index;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.Table;
 
 /**
  * @author ActiveEon Team
@@ -82,5 +89,6 @@ public abstract class KeyValue {
     public void setValue(String value) {
         this.value = value;
     }
+
 
 }
