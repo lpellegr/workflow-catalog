@@ -52,12 +52,5 @@ public class Variable extends KeyValue {
     public String getName() {
         return super.getKey();
     }
-    @Override
-    public String toString() {
-        return "KeyValue{" +
-                "id=" + id +
-                ", key='" + key + '\'' +
-                ", value='" + value + '\'' +
-                '}';
-    }
+
 }

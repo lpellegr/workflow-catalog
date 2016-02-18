@@ -140,9 +140,13 @@ public class WorkflowRevisionService {
                 new WorkflowRevision(
                         bucketId, revisionNumber, proActiveWorkflowParserResult.getJobName(),
                         proActiveWorkflowParserResult.getProjectName(), LocalDateTime.now(),
-                        createEntityGenericInformation(proActiveWorkflowParserResult.getGenericInformation()),
-                        createEntityVariable(proActiveWorkflowParserResult.getVariables()),
                         proActiveWorkflowXmlContent);
+
+        workflowRevision.addGenericInformation(createEntityGenericInformation(
+                proActiveWorkflowParserResult.getGenericInformation()));
+
+        workflowRevision.addVariables(createEntityVariable(
+                proActiveWorkflowParserResult.getVariables()));
 
         workflowRevision = workflowRevisionRepository.save(workflowRevision);
 
@@ -201,12 +205,10 @@ public class WorkflowRevisionService {
             if (query.isPresent()) {
                 PredicateContext predicateContext = createJpaQueryPredicate(query.get());
 
-                BooleanBuilder booleanBuilder = new BooleanBuilder(predicateContext.getPredicate());
-                booleanBuilder.and(QWorkflowRevision.workflowRevision.workflow.id.eq(workflowId.get()));
-
-                predicateContext = new PredicateContext(booleanBuilder,
-                        predicateContext.getGenericInformationAliases(),
-                        predicateContext.getVariableAliases());
+//                BooleanBuilder booleanBuilder = new BooleanBuilder(predicateContext.getPredicate());
+//                booleanBuilder.and(QWorkflowRevision.workflowRevision.workflow.id.eq(workflowId.get()));
+//
+//                predicateContext = new PredicateContext(booleanBuilder);
 
                 page = queryDslWorkflowRevisionRepository.findAllWorkflowRevisions(
                         bucketId, predicateContext, pageable);

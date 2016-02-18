@@ -19,7 +19,8 @@ and_expression
     ;
 
 clause
-    : (AttributeLiteral COMPARE_OPERATOR StringLiteral) #finalClause
+    : (AttributeLiteral COMPARE_OPERATOR StringLiteral) #atomicClause
+    | AttributeLiteral LPAREN StringLiteral PAIR_SEPARATOR StringLiteral RPAREN #keyValueClause
     | LPAREN or_expression RPAREN #parenthesedClause
     ;
 
@@ -30,13 +31,14 @@ OR                  : 'OR' | '||' ;
 COMPARE_OPERATOR    : '!=' | '=' ;
 LPAREN              : '(' ;
 RPAREN              : ')' ;
+PAIR_SEPARATOR      : ',' ;
 
 StringLiteral
     : '"' (~["\\\r\n] | '\\' (. | EOF))* '"'
     ;
 
 AttributeLiteral
-    : LETTER (LETTER | DIGIT | '_' | '.')*
+    : LETTER (LETTER | DIGIT | '_')*
     ;
 
 WS

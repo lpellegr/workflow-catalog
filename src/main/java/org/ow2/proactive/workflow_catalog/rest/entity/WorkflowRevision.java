@@ -33,6 +33,7 @@ package org.ow2.proactive.workflow_catalog.rest.entity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -105,6 +106,17 @@ public class WorkflowRevision {
     }
 
     public WorkflowRevision(Long bucketId, Long revisionId, String name, String projectName,
+            LocalDateTime createdAt, byte[] xmlPayload) {
+        this();
+        this.bucketId = bucketId;
+        this.revisionId = revisionId;
+        this.name = name;
+        this.projectName = projectName;
+        this.createdAt = createdAt;
+        this.xmlPayload = xmlPayload;
+    }
+
+    public WorkflowRevision(Long bucketId, Long revisionId, String name, String projectName,
                             LocalDateTime createdAt, List<GenericInformation> genericInformation,
                             List<Variable> variables, byte[] xmlPayload) {
         this.bucketId = bucketId;
@@ -131,10 +143,20 @@ public class WorkflowRevision {
 
     public void addGenericInformation(GenericInformation genericInformation) {
         this.genericInformation.add(genericInformation);
+        genericInformation.setWorkflowRevision(this);
+    }
+
+    public void addGenericInformation(Collection<GenericInformation> genericInformation) {
+        genericInformation.forEach(gi -> addGenericInformation(gi));
     }
 
     public void addVariable(Variable variable) {
         this.variables.add(variable);
+        variable.setWorkflowRevision(this);
+    }
+
+    public void addVariables(Collection<Variable> variables) {
+        variables.forEach(var -> addVariable(var));
     }
 
     public List<GenericInformation> getGenericInformation() {
@@ -199,6 +221,21 @@ public class WorkflowRevision {
 
     public void setXmlPayload(byte[] xmlPayload) {
         this.xmlPayload = xmlPayload;
+    }
+
+    @Override
+    public String toString() {
+        return "WorkflowRevision{" +
+                "id=" + id +
+                ", createdAt=" + createdAt +
+                ", name='" + name + '\'' +
+                ", revisionId=" + revisionId +
+                ", bucketId=" + bucketId +
+                ", workflow=" + workflow +
+                ", projectName='" + projectName + '\'' +
+                ", genericInformation=" + genericInformation +
+                ", variables=" + variables +
+                '}';
     }
 
 }

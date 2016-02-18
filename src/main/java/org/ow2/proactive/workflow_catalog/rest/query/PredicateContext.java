@@ -35,7 +35,8 @@ import java.util.Set;
 import org.ow2.proactive.workflow_catalog.rest.entity.QGenericInformation;
 import org.ow2.proactive.workflow_catalog.rest.entity.QVariable;
 import com.google.common.base.MoreObjects;
-import com.mysema.query.types.Predicate;
+import com.google.common.collect.ImmutableSet;
+import com.mysema.query.types.expr.BooleanExpression;
 
 /**
  * PredicateContext keeps the context associated to a query predicate.
@@ -45,20 +46,26 @@ import com.mysema.query.types.Predicate;
  */
 public final class PredicateContext {
 
-    private final Predicate predicate;
+    private final BooleanExpression booleanExpression;
 
     private final Set<QGenericInformation> qGenericInformation;
 
     private final Set<QVariable> qVariables;
 
-    public PredicateContext(Predicate predicate, Set<QGenericInformation> qGenericInformation, Set<QVariable> qVariables) {
-        this.predicate = predicate;
+    public PredicateContext(BooleanExpression booleanExpression) {
+        this.booleanExpression = booleanExpression;
+        this.qGenericInformation = ImmutableSet.of();
+        this.qVariables = ImmutableSet.of();
+    }
+
+    public PredicateContext(BooleanExpression predicate, Set<QGenericInformation> qGenericInformation, Set<QVariable> qVariables) {
+        this.booleanExpression = predicate;
         this.qGenericInformation = qGenericInformation;
         this.qVariables = qVariables;
     }
 
-    public Predicate getPredicate() {
-        return predicate;
+    public BooleanExpression getPredicate() {
+        return booleanExpression;
     }
 
     public Set<QGenericInformation> getGenericInformationAliases() {
@@ -72,7 +79,7 @@ public final class PredicateContext {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("predicate", predicate)
+                .add("predicate", booleanExpression)
                 .add("qGenericInformation", qGenericInformation)
                 .add("qVariables", qVariables).toString();
     }

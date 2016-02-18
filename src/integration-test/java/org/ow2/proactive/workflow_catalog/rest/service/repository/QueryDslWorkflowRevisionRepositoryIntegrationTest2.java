@@ -38,7 +38,7 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
  *
  * @author ActiveEon Team
  */
-@ActiveProfiles("test")
+@ActiveProfiles("default")
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = { Application.class })
@@ -71,19 +71,20 @@ public class QueryDslWorkflowRevisionRepositoryIntegrationTest2 extends Abstract
         bucket = bucketService.createBucket("test");
 
         String[] files = new String[] {
-                "/home/lpellegr/Téléchargements/wcql-tests/A.xml",
-                "/home/lpellegr/Téléchargements/wcql-tests/B.xml",
-                "/home/lpellegr/Téléchargements/wcql-tests/C.xml",
-                "/home/lpellegr/Téléchargements/wcql-tests/D.xml",
+//                "/home/lpellegr/Téléchargements/wcql-tests/A.xml",
+//                "/home/lpellegr/Téléchargements/wcql-tests/B.xml",
+//                "/home/lpellegr/Téléchargements/wcql-tests/C.xml",
+//                "/home/lpellegr/Téléchargements/wcql-tests/D.xml",
+                "/home/lpellegr/Téléchargements/wcql-tests/E.xml",
+                "/home/lpellegr/Téléchargements/wcql-tests/F.xml",
         };
 
-        for (String f : files) {
-            final byte[] bytes = ByteStreams.toByteArray(new FileInputStream(f));
+        for (String file : files) {
+            final byte[] bytes = ByteStreams.toByteArray(new FileInputStream(file));
 
             ProActiveWorkflowParser parser =
-                    new ProActiveWorkflowParser(new FileInputStream(f));
+                    new ProActiveWorkflowParser(new FileInputStream(file));
 
-            // TODO parse parse oops
             workflowService.createWorkflow(bucket.id, parser.parse(), bytes);
         }
     }
@@ -92,18 +93,17 @@ public class QueryDslWorkflowRevisionRepositoryIntegrationTest2 extends Abstract
     @Test
     public void test() {
         final Page<WorkflowRevision> custom =
-//            workflowRevisionRepository.findAll(new PageRequest(0, 100));
                 queryDslWorkflowRevisionRepository.findCustom(bucket.id,
-                new PageRequest(0, 100));
+                        new PageRequest(0, 100));
 
         final List<WorkflowRevision> content = custom.getContent();
 
+        System.out.println("NB QUERY RESULT=" + content.size());
+
         for (WorkflowRevision wr : content) {
-            System.out.println("wr " + wr + ", " + wr.getGenericInformation());
+            System.out.println("WORKFLOW REVISION " + wr);
         }
 
-
-        System.out.println("QueryDslWorkflowRevisionRepositoryIntegrationTest2.test RESULT=" + content);
     }
 
 }

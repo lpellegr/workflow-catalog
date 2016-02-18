@@ -30,11 +30,15 @@
  */
 package org.ow2.proactive.workflow_catalog.rest.query;
 
+import org.ow2.proactive.workflow_catalog.rest.query.parser.WorkflowCatalogQueryLanguageLexer;
+import org.ow2.proactive.workflow_catalog.rest.query.parser.WorkflowCatalogQueryLanguageParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.TokenStream;
-import org.ow2.proactive.workflow_catalog.rest.query.parser.WorkflowCatalogQueryLanguageLexer;
-import org.ow2.proactive.workflow_catalog.rest.query.parser.WorkflowCatalogQueryLanguageParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+;
 
 /**
  * Compile a Workflow Catalog query as input String to an Abstract Syntax Tree (AST).
@@ -42,6 +46,8 @@ import org.ow2.proactive.workflow_catalog.rest.query.parser.WorkflowCatalogQuery
  * @author ActiveEon Team
  */
 public class WorkflowCatalogQueryCompiler {
+
+    private static final Logger log = LoggerFactory.getLogger(WorkflowCatalogQueryCompiler.class);
 
     /**
      * Compile the specified Workflow Catalog to an AST.
@@ -69,6 +75,10 @@ public class WorkflowCatalogQueryCompiler {
         parser.addErrorListener(syntaxErrorListener);
 
         WorkflowCatalogQueryLanguageParser.ExpressionContext expression = parser.expression();
+
+        if (log.isDebugEnabled()) {
+            log.debug("WCQL AST:\n" + expression.toStringTree());
+        }
 
         if (!syntaxErrorListener.getSyntaxErrors().isEmpty()) {
             throw new SyntaxException(syntaxErrorListener.getSyntaxErrors());
